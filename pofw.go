@@ -90,6 +90,7 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 		for {
 			conn_in, err := listener.Accept()
 			if err != nil {
+				log.Printf("%s ? <-!-> %s %s <===> %s ? <---> %s %s\n", listener.Addr().Network(), listener.Addr().Network(), listener.Addr().String(), to_protocol, to_protocol, to_address)
 				log.Fatalln(err)
 			}
 			go func() {
@@ -246,7 +247,7 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 				go func(addr_in net.Addr, first_packet []byte) {
 					conn_out, err := net.Dial(to_protocol, to_address)
 					if err != nil {
-						log.Printf("%s %s <---> %s %s <=!=> %s ? <-!-> %s %s\n", addr_in.Network(), addr_in.String(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), to_protocol, to_protocol, to_address)
+						log.Printf("%s %s <---> %s %s <===> %s ? <-!-> %s %s\n", addr_in.Network(), addr_in.String(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), to_protocol, to_protocol, to_address)
 						log.Println(err)
 						return
 					}
