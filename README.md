@@ -36,7 +36,7 @@ If you leave `ip` as empty, then all IP addresses on the machine will be listene
 
 You can convert data from UDP to TCP, then back to UDP. The speed will be slower, but it is useful if UDP packets are blocked by a firewall.
 
-Note that only data originally coming from a UDP port can be converted to UDP, or the program will report "packet too large".
+Note that only data originally coming from a UDP port can be eventually converted back to UDP: You cannot convert arbitary TCP data to UDP, or the program will report "packet too large".
 
 Running
 -------
