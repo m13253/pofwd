@@ -103,10 +103,10 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 				log.Printf("%s %s <---> %s %s <===> %s %s <---> %s %s\n", conn_in.RemoteAddr().Network(), conn_in.RemoteAddr().String(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), conn_out.LocalAddr().Network(), conn_out.LocalAddr().String(), conn_out.RemoteAddr().Network(), conn_out.RemoteAddr().String())
 				go func() {
 					var err error
+					var packet_len int
 					buffer := make([]byte, 2048)
-					for {
-						var packet_len int
-						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+					if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+						for {
 							_, err = io.ReadFull(conn_in, buffer[:2])
 							if err != nil {
 								break
@@ -122,15 +122,21 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 							if err != nil {
 								break
 							}
-						} else {
-							packet_len, err = conn_in.Read(buffer[2:])
+							_, err = conn_out.Write(buffer[2:2+packet_len])
 							if err != nil {
 								break
 							}
 						}
-						_, err = conn_out.Write(buffer[2:2+packet_len])
-						if err != nil {
-							break
+					} else {
+						for {
+							packet_len, err = conn_in.Read(buffer)
+							if err != nil {
+								break
+							}
+							_, err = conn_out.Write(buffer[:packet_len])
+							if err != nil {
+								break
+							}
 						}
 					}
 					if err == io.EOF {
@@ -150,21 +156,30 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 				}()
 				go func() {
 					var err error
+					var packet_len int
 					buffer := make([]byte, 2048)
-					for {
-						var packet_len int
-						packet_len, err = conn_out.Read(buffer[2:])
-						if err != nil {
-							break
-						}
-						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+					if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+						for {
+							packet_len, err = conn_out.Read(buffer[2:])
+							if err != nil {
+								break
+							}
 							buffer[0], buffer[1] = byte(packet_len >> 8), byte(packet_len)
 							_, err = conn_in.Write(buffer[:2+packet_len])
-						} else {
-							_, err = conn_in.Write(buffer[2:2+packet_len])
+							if err != nil {
+								break
+							}
 						}
-						if err != nil {
-							break
+					} else {
+						for {
+							packet_len, err = conn_out.Read(buffer)
+							if err != nil {
+								break
+							}
+							_, err = conn_in.Write(buffer[:packet_len])
+							if err != nil {
+								break
+							}
 						}
 					}
 					if err != io.EOF {
@@ -249,23 +264,34 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 					}] = pipe
 					go func() {
 						var err error
+						var packet_len int
 						buffer := make([]byte, 2048)
-						for {
-							var packet_len int
-							atomic.StoreUintptr(ready, 1)
-							packet_len, err = pipe_in.Read(buffer[2:])
-							atomic.StoreUintptr(ready, 0)
-							if err != nil {
-								break
+						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+							for {
+								atomic.StoreUintptr(ready, 1)
+								packet_len, err = pipe_in.Read(buffer)
+								atomic.StoreUintptr(ready, 0)
+								if err != nil {
+									break
+								}
+								_, err = conn_out.Write(buffer[:packet_len])
+								if err != nil {
+									break
+								}
 							}
-							if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
-								_, err = conn_out.Write(buffer[2:2+packet_len])
-							} else {
+						} else {
+							for {
+								atomic.StoreUintptr(ready, 1)
+								packet_len, err = pipe_in.Read(buffer[2:])
+								atomic.StoreUintptr(ready, 0)
+								if err != nil {
+									break
+								}
 								buffer[0], buffer[1] = byte(packet_len >> 8), byte(packet_len)
 								_, err = conn_out.Write(buffer[:2+packet_len])
-							}
-							if err != nil {
-								break
+								if err != nil {
+									break
+								}
 							}
 						}
 						if err == io.EOF {
@@ -287,15 +313,21 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 					}()
 					go func() {
 						var err error
+						var packet_len int
 						buffer := make([]byte, 2048)
-						for {
-							var packet_len int
-							if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
-								packet_len, err = conn_out.Read(buffer[2:])
+						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+							for {
+								packet_len, err = conn_out.Read(buffer)
 								if err != nil {
 									break
 								}
-							} else {
+								_, err = conn_in.WriteTo(buffer[:packet_len], addr_in)
+								if err != nil {
+									break
+								}
+							}
+						} else {
+							for {
 								_, err = io.ReadFull(conn_out, buffer[:2])
 								if err != nil {
 									break
@@ -311,10 +343,10 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 								if err != nil {
 									break
 								}
-							}
-							_, err = conn_in.WriteTo(buffer[2:2+packet_len], addr_in)
-							if err != nil {
-								break
+								_, err = conn_in.WriteTo(buffer[2:2+packet_len], addr_in)
+								if err != nil {
+									break
+								}
 							}
 						}
 						if err == io.EOF {
