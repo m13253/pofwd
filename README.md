@@ -34,8 +34,9 @@ For `tcp`, `tcp6`, `udp` and `udp6`, `address` is in the form of `[ip]:port`.
 
 If you leave `ip` as empty, then all IP addresses on the machine will be listened on.
 
-You can forward data between TCP and UDP, but data integrity will be downgraded.
+You can convert data from UDP to TCP, then back to UDP. The speed will be slower, but it is useful if UDP packets are blocked by a firewall.
 
+Note that only data originally coming from a UDP port can be converted to UDP, or the program will report "packet too large".
 
 Running
 -------
