@@ -25,6 +25,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -193,7 +194,6 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 	}
 	log.Printf("serving on %s %s\n", conn_in.LocalAddr().Network(), conn_in.LocalAddr().String())
 	go func() {
-		buffer := make([]byte, 2048)
 		type pipe_cache struct {
 			Pipe    *io.PipeWriter
 			Ready   *uintptr
@@ -204,6 +204,8 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 			String  string
 		}
 		pipes := make(map[hashable_addr]pipe_cache)
+		pipes_lock := new(sync.RWMutex)
+		buffer := make([]byte, 2048)
 		for {
 			packet_len, addr_in, err := conn_in.ReadFrom(buffer)
 			if err != nil {
@@ -215,15 +217,18 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 				log.Printf("%s ? <-!-> %s %s <===> %s ? <---> %s %s\n", conn_in.LocalAddr().Network(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), to_protocol, to_protocol, to_address)
 				log.Fatalln(err)
 			}
+			pipes_lock.RLock()
 			if pipe_out, ok := pipes[hashable_addr {
 				Network: addr_in.Network(),
 				String: addr_in.String(),
 			}]; ok {
+				pipes_lock.RUnlock()
 				pipe_out.TTL = time.Now().Add(180 * time.Second)
 				if atomic.LoadUintptr(pipe_out.Ready) != 0 {
 					pipe_out.Pipe.Write(buffer[:packet_len])
 				}
 			} else {
+				pipes_lock.RUnlock()
 				first_packet := make([]byte, packet_len)
 				copy(first_packet, buffer)
 				go func(addr_in net.Addr, first_packet []byte) {
@@ -241,10 +246,12 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 						Ready: ready,
 						TTL: time.Now().Add(180 * time.Second),
 					}
+					pipes_lock.Lock()
 					pipes[hashable_addr {
 						Network: addr_in.Network(),
 						String: addr_in.String(),
 					}] = pipe
+					pipes_lock.Unlock()
 					go func() {
 						var err error
 						var packet_len int
@@ -275,10 +282,12 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 							log.Printf("%s %s <---> %s %s ==!=> %s %s <---> %s %s\n", addr_in.Network(), addr_in.String(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), conn_out.LocalAddr().Network(), conn_out.LocalAddr().String(), conn_out.RemoteAddr().Network(), conn_out.RemoteAddr().String())
 							log.Println(err)
 						}
+						pipes_lock.Lock()
 						delete(pipes, hashable_addr {
 							Network: addr_in.Network(),
 							String: addr_in.String(),
 						})
+						pipes_lock.Unlock()
 						pipe_in.Close()
 						if conn_out_tcp, ok := conn_out.(*net.TCPConn); ok {
 							conn_out_tcp.CloseWrite()
@@ -330,7 +339,9 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 			now := time.Now()
 			for k, v := range pipes {
 				if v.TTL.Before(now) {
+					pipes_lock.Lock()
 					delete(pipes, k)
+					pipes_lock.Unlock()
 					v.Pipe.Close()
 				}
 			}
