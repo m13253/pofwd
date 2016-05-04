@@ -152,6 +152,7 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 					buffer := make([]byte, 2048)
 					if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
 						for {
+							conn_out.SetReadDeadline(time.Now().Add(180 * time.Second))
 							packet_len, err = conn_out.Read(buffer[2:])
 							if err != nil { break }
 							buffer[0], buffer[1] = byte(packet_len >> 8), byte(packet_len)
@@ -205,6 +206,18 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 		}
 		pipes := make(map[hashable_addr]pipe_cache)
 		pipes_lock := new(sync.RWMutex)
+		go func() {
+			time.Sleep(1 * time.Minute)
+			now := time.Now()
+			for k, v := range pipes {
+				if v.TTL.Before(now) {
+					pipes_lock.Lock()
+					delete(pipes, k)
+					pipes_lock.Unlock()
+					v.Pipe.Close()
+				}
+			}
+		}()
 		buffer := make([]byte, 2048)
 		for {
 			packet_len, addr_in, err := conn_in.ReadFrom(buffer)
@@ -301,6 +314,7 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 						buffer := make([]byte, 2048)
 						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
 							for {
+								conn_out.SetReadDeadline(time.Now().Add(180 * time.Second))
 								packet_len, err = conn_out.Read(buffer)
 								if err != nil { break }
 								_, err = conn_in.WriteTo(buffer[:packet_len], addr_in)
@@ -335,15 +349,6 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 					}()
 					pipe_out.Write(first_packet)
 				}(addr_in, first_packet)
-			}
-			now := time.Now()
-			for k, v := range pipes {
-				if v.TTL.Before(now) {
-					pipes_lock.Lock()
-					delete(pipes, k)
-					pipes_lock.Unlock()
-					v.Pipe.Close()
-				}
 			}
 		}
 	}()
