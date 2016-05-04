@@ -165,7 +165,7 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 							if err != nil { break }
 						}
 					}
-					if err != io.EOF {
+					if err == io.EOF {
 						log.Printf("%s %s <---> %s %s <=X== %s %s <---> %s %s\n", conn_in.RemoteAddr().Network(), conn_in.RemoteAddr().String(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), conn_out.LocalAddr().Network(), conn_out.LocalAddr().String(), conn_out.RemoteAddr().Network(), conn_out.RemoteAddr().String())
 					} else {
 						log.Printf("%s %s <---> %s %s <=!== %s %s <---> %s %s\n", conn_in.RemoteAddr().Network(), conn_in.RemoteAddr().String(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), conn_out.LocalAddr().Network(), conn_out.LocalAddr().String(), conn_out.RemoteAddr().Network(), conn_out.RemoteAddr().String())
