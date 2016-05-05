@@ -213,14 +213,16 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 		pipes := make(map[hashable_addr]pipe_cache)
 		pipes_lock := new(sync.RWMutex)
 		go func() {
-			time.Sleep(1 * time.Minute)
-			now := time.Now()
-			for k, v := range pipes {
-				if v.TTL.Before(now) {
-					pipes_lock.Lock()
-					delete(pipes, k)
-					pipes_lock.Unlock()
-					v.Pipe.Close()
+			for {
+				time.Sleep(59 * time.Second)
+				now := time.Now()
+				for k, v := range pipes {
+					if v.TTL.Before(now) {
+						pipes_lock.Lock()
+						delete(pipes, k)
+						pipes_lock.Unlock()
+						v.Pipe.Close()
+					}
 				}
 			}
 		}()
