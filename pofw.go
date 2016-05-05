@@ -92,6 +92,12 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 			conn_in, err := listener.Accept()
 			if err != nil {
 				log.Printf("%s ? <-!-> %s %s <===> %s ? <---> %s %s\n", listener.Addr().Network(), listener.Addr().Network(), listener.Addr().String(), to_protocol, to_protocol, to_address)
+				if err_net, ok := err.(net.Error); ok {
+					if err_net.Temporary() {
+						log.Println(err)
+						continue
+					}
+				}
 				log.Fatalln(err)
 			}
 			go func() {
@@ -222,12 +228,13 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 		for {
 			packet_len, addr_in, err := conn_in.ReadFrom(buffer)
 			if err != nil {
+				log.Printf("%s ? <-!-> %s %s <===> %s ? <---> %s %s\n", conn_in.LocalAddr().Network(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), to_protocol, to_protocol, to_address)
 				if err_net, ok := err.(net.Error); ok {
 					if err_net.Temporary() {
+						log.Println(err)
 						continue
 					}
 				}
-				log.Printf("%s ? <-!-> %s %s <===> %s ? <---> %s %s\n", conn_in.LocalAddr().Network(), conn_in.LocalAddr().Network(), conn_in.LocalAddr().String(), to_protocol, to_protocol, to_address)
 				log.Fatalln(err)
 			}
 			pipes_lock.RLock()
