@@ -5,10 +5,11 @@ After=network.target
 [Service]
 Type=simple
 # If you need to bind lower ports, execute
-# setcap 'cap_net_bind_service=+ep' /usr/local/bin/pofw
+#   setcap 'cap_net_bind_service=+ep' /usr/local/bin/pofw
 User=nobody
 ExecStart=/usr/local/bin/pofw /etc/pofw.conf
-# Just in case it exits (too many opened files, required network interface is not set up yet, etc.)
+LimitNOFILE=1048576
+# Just in case it exits (required network interface is not set up yet, crash, etc.)
 Restart=always
 RestartSec=3
 
