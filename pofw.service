@@ -1,0 +1,16 @@
+[Unit]
+Description=Port forwarding
+After=network.target
+
+[Service]
+Type=simple
+# If you need to bind lower ports, execute
+# setcap 'cap_net_bind_service=+ep' /usr/local/bin/pofw
+User=nobody
+ExecStart=/usr/local/bin/pofw /etc/pofw.conf
+# Just in case it exits (too many opened files, required network interface is not set up yet, etc.)
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
