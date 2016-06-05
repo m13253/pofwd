@@ -1,3 +1,6 @@
+# Systemd service configuration for pofw
+# You can use this file if you want to start pofw during startup
+
 [Unit]
 Description=Port forwarding
 After=network-online.target
