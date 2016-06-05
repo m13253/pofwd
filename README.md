@@ -5,6 +5,7 @@ This is a program that forwards data among network ports.
 
 It listens on some TCP or UDP ports, then forward any requests to some other TCP or UDP ports.
 
+It is like [socat](http://www.dest-unreach.org/socat/), but handles concurrency.
 
 Building
 --------
@@ -45,8 +46,12 @@ Simply type `./pofw`, there it go!
 
 You can also type `./pofw myconf.conf`, where `myconf.conf` is a configuration file other than `pofw.conf`.
 
-
 License
 -------
 
 This program is licensed under GPL version 3. See [COPYING](COPYING) for details.
+
+See Also
+--------
+
+Also please check [portpub](http://github.com/m13253/portpub), which publishes a service from localhost onto your server.
