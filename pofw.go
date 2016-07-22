@@ -39,6 +39,12 @@ func main() {
 		} else {
 			conf_path = os.Args[1]
 		}
+	} else if len(os.Args) == 5 {
+		if err := startForwarding(os.Args[1], os.Args[2], os.Args[3], os.Args[4]); err != nil {
+			log.Fatalln(err)
+		}
+		<-make(chan bool)
+		os.Exit(0)
 	} else if len(os.Args) != 1 {
 		printUsage()
 		os.Exit(1)
@@ -69,7 +75,7 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Printf("Usage: %s [CONFIG]\n\n  CONFIG\tConfiguration file [Default: pofw.conf]\n\n", os.Args[0])
+	fmt.Printf("Usage: %s [CONFIG]\n   Or: %s <FROM PROTOCOL> <FROM ADDRESS> <TO PROTOCOL> <TO ADDRESS>\n\n  CONFIG\tConfiguration file [Default: pofw.conf]\n\n", os.Args[0], os.Args[0])
 }
 
 func startForwarding(from_protocol, from_address, to_protocol, to_address string) error {
