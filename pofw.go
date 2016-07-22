@@ -73,10 +73,9 @@ func printUsage() {
 }
 
 func startForwarding(from_protocol, from_address, to_protocol, to_address string) error {
-	switch from_protocol {
-	case "udp", "udp4", "udp6", "ip", "ip4", "ip6", "unixgram":
+	if isPacketProtocol(from_protocol) {
 		return startForwardingPacket(from_protocol, from_address, to_protocol, to_address)
-	default:
+	} else {
 		return startForwardingStream(from_protocol, from_address, to_protocol, to_address)
 	}
 }
@@ -113,7 +112,7 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 					var err error
 					var packet_len int
 					buffer := make([]byte, 2048)
-					if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+					if isPacketProtocol(to_protocol) {
 						for {
 							_, err = io.ReadFull(conn_in, buffer[:2])
 							if err != nil { break }
@@ -156,7 +155,7 @@ func startForwardingStream(from_protocol, from_address, to_protocol, to_address 
 					var err error
 					var packet_len int
 					buffer := make([]byte, 2048)
-					if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+					if isPacketProtocol(to_protocol) {
 						for {
 							conn_out.SetReadDeadline(time.Now().Add(180 * time.Second))
 							packet_len, err = conn_out.Read(buffer[2:])
@@ -278,7 +277,7 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 						var err error
 						var packet_len int
 						buffer := make([]byte, 2048)
-						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+						if isPacketProtocol(to_protocol) {
 							for {
 								atomic.StoreUintptr(ready, 1)
 								packet_len, err = pipe_in.Read(buffer)
@@ -321,7 +320,7 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 						var err error
 						var packet_len int
 						buffer := make([]byte, 2048)
-						if _, conn_out_is_dgram := conn_out.(net.PacketConn); conn_out_is_dgram {
+						if isPacketProtocol(to_protocol) {
 							for {
 								conn_out.SetReadDeadline(time.Now().Add(180 * time.Second))
 								packet_len, err = conn_out.Read(buffer)
@@ -362,6 +361,15 @@ func startForwardingPacket(from_protocol, from_address, to_protocol, to_address 
 		}
 	}()
 	return nil
+}
+
+func isPacketProtocol(protocol_name string) bool {
+	switch strings.ToLower(protocol_name) {
+	case "udp", "udp4", "udp6", "ip", "ip4", "ip6", "unixgram":
+		return true
+	default: // "tcp", "tcp4", "tcp6", "unix", "unixpacket"
+		return false
+	}
 }
 
 type tooLargePacketError struct {
