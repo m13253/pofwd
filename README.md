@@ -27,7 +27,7 @@ Open `pofw.conf`, each line is a forwarding rule, in the form of
 <form protocol> <from address>  <to protocol> <to_address>
 ```
 
-`Protocol` can be `tcp`, `tcp4`, `tcp6`, `udp`, `udp4`, `udp6`, `unix`, `unixgram`.
+`Protocol` can be `tcp`, `tcp4`, `tcp6`, `udp`, `udp4`, `udp6`, `unix`, `unixgram`, `unixpacket`.
 
 For `tcp`, `tcp4`, `udp` and `udp4`, `address` is in the form of `ip:port`.
 
