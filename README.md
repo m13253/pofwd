@@ -54,4 +54,4 @@ This program is licensed under GPL version 3. See [COPYING](COPYING) for details
 See Also
 --------
 
-Also please check [portpub](http://github.com/m13253/portpub), which publishes a service from localhost onto your server.
+Also please check [popub](http://github.com/m13253/popub), which publishes a service from localhost onto your server.
