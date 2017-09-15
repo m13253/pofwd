@@ -1,0 +1,18 @@
+# Systemd service configuration for pofwd
+# You can use this file if you want to start pofwd during startup
+
+[Unit]
+Description=Port forwarding
+After=network-online.target
+
+[Service]
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ExecStart=/usr/local/bin/pofwd /etc/pofwd.conf
+LimitNOFILE=1048576
+Restart=always
+RestartSec=3
+Type=simple
+User=nobody
+
+[Install]
+WantedBy=multi-user.target
