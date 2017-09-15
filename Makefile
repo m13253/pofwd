@@ -8,7 +8,7 @@ clean:
 	rm -f pofwd
 
 install: all
-	install -Dm0755 pofwd "$(PREFIX)/bin/"
+	install -Dm0755 pofwd "$(PREFIX)/bin/pofwd"
 	$(MAKE) -C systemd install
 
 uninstall:

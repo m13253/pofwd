@@ -1,7 +1,7 @@
 .PHONY: install uninstall
 
 install:
-	install -Dm0644 pofwd.service /usr/lib/systemd/system/
+	install -Dm0644 pofwd.service /usr/lib/systemd/system/pofwd.service
 	touch /etc/pofwd.conf
 	systemctl daemon-reload || true
 
