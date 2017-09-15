@@ -7,7 +7,7 @@ PREFIX=/usr/local
 clean:
 	rm -f pofwd
 
-install:
+install: all
 	install -Dm0755 pofwd "$(PREFIX)/bin/"
 	$(MAKE) -C systemd install
 
