@@ -1,5 +1,5 @@
 /*
-    Pofw -- A network port forwarding program
+    Pofwd -- A network port forwarding program
     Copyright (C) 2016 Star Brilliant <m13253@hotmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	conf_path := "pofw.conf"
+	conf_path := "pofwd.conf"
 	if len(os.Args) == 2 {
 		if os.Args[1] == "--help" {
 			printUsage()
@@ -75,7 +75,7 @@ func main() {
 }
 
 func printUsage() {
-	fmt.Printf("Usage: %s [CONFIG]\n   Or: %s <FROM PROTOCOL> <FROM ADDRESS> <TO PROTOCOL> <TO ADDRESS>\n\n  CONFIG\tConfiguration file [Default: pofw.conf]\n\n", os.Args[0], os.Args[0])
+	fmt.Printf("Usage: %s [CONFIG]\n   Or: %s <FROM PROTOCOL> <FROM ADDRESS> <TO PROTOCOL> <TO ADDRESS>\n\n  CONFIG\tConfiguration file [Default: pofwd.conf]\n\n", os.Args[0], os.Args[0])
 }
 
 func startForwarding(from_protocol, from_address, to_protocol, to_address string) error {

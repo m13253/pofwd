@@ -1,5 +1,5 @@
-Pofw: A network port forwarding program
-=======================================
+Pofwd: A network port forwarding program
+========================================
 
 This is a program that forwards data among network ports.
 
@@ -21,7 +21,7 @@ go build
 Configuring
 -----------
 
-Open `pofw.conf`, each line is a forwarding rule, in the form of
+Open `pofwd.conf`, each line is a forwarding rule, in the form of
 
 ```
 <form protocol> <from address>  <to protocol> <to_address>
@@ -42,9 +42,9 @@ Note that only data originally coming from a UDP port can be eventually converte
 Running
 -------
 
-Simply type `./pofw`, there it go!
+Simply type `./pofwd`, there it go!
 
-You can also type `./pofw myconf.conf`, where `myconf.conf` is a configuration file other than `pofw.conf`.
+You can also type `./pofwd myconf.conf`, where `myconf.conf` is a configuration file other than `pofwd.conf`.
 
 License
 -------
