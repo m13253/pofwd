@@ -1,5 +1,5 @@
-Pofwd: A network port forwarding program
-========================================
+Pofwd: The simple & naïve port forwarding program
+=================================================
 
 This is a program that forwards data among network ports.
 
