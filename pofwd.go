@@ -118,7 +118,7 @@ func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress stri
 				go func() {
 					var err error
 					var packetLen int
-					buffer := make([]byte, 2048)
+					buffer := make([]byte, 65537)
 					if isPacketProtocol(toProtocol) {
 						for {
 							_, err = io.ReadFull(connIn, buffer[:2])
@@ -126,7 +126,7 @@ func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress stri
 								break
 							}
 							packetLen = (int(buffer[0]) << 8) | int(buffer[1])
-							if packetLen > 2046 {
+							if packetLen > 65535 {
 								err = &tooLargePacketError{
 									Size: packetLen,
 								}
@@ -171,7 +171,7 @@ func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress stri
 				go func() {
 					var err error
 					var packetLen int
-					buffer := make([]byte, 2048)
+					buffer := make([]byte, 65537)
 					if isPacketProtocol(toProtocol) {
 						for {
 							connOut.SetReadDeadline(time.Now().Add(180 * time.Second))
@@ -250,7 +250,7 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 				}
 			}
 		}()
-		buffer := make([]byte, 2048)
+		buffer := make([]byte, 65537)
 		for {
 			packetLen, addrIn, err := connIn.ReadFrom(buffer)
 			if err != nil {
@@ -301,7 +301,7 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 					go func() {
 						var err error
 						var packetLen int
-						buffer := make([]byte, 2048)
+						buffer := make([]byte, 65537)
 						if isPacketProtocol(toProtocol) {
 							for {
 								atomic.StoreUintptr(ready, 1)
@@ -352,7 +352,7 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 					go func() {
 						var err error
 						var packetLen int
-						buffer := make([]byte, 2048)
+						buffer := make([]byte, 65537)
 						if isPacketProtocol(toProtocol) {
 							for {
 								connOut.SetReadDeadline(time.Now().Add(180 * time.Second))
@@ -372,7 +372,7 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 									break
 								}
 								packetLen = (int(buffer[0]) << 8) | int(buffer[1])
-								if packetLen > 2046 {
+								if packetLen > 65535 {
 									err = &tooLargePacketError{
 										Size: packetLen,
 									}
@@ -420,5 +420,5 @@ type tooLargePacketError struct {
 }
 
 func (e *tooLargePacketError) Error() string {
-	return fmt.Sprintf("packet too large (%d > 2046)", e.Size)
+	return fmt.Sprintf("packet too large (%d > 65535)", e.Size)
 }
