@@ -82,9 +82,8 @@ func printUsage() {
 func startForwarding(fromProtocol, fromAddress, toProtocol, toAddress string) error {
 	if isPacketProtocol(fromProtocol) {
 		return startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress)
-	} else {
-		return startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress)
 	}
+	return startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress)
 }
 
 func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress string) error {
@@ -108,6 +107,8 @@ func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress stri
 			}
 			go func() {
 				connOut, err := net.Dial(toProtocol, toAddress)
+				var connWait sync.WaitGroup
+				connWait.Add(2)
 				if err != nil {
 					log.Printf("%s %s <---> %s %s <===> %s ? <-!-> %s %s\n", connIn.RemoteAddr().Network(), connIn.RemoteAddr().String(), connIn.LocalAddr().Network(), connIn.LocalAddr().String(), toProtocol, toProtocol, toAddress)
 					log.Println(err)
@@ -167,6 +168,7 @@ func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress stri
 					} else {
 						connOut.Close()
 					}
+					connWait.Done()
 				}()
 				go func() {
 					var err error
@@ -211,7 +213,16 @@ func startForwardingStream(fromProtocol, fromAddress, toProtocol, toAddress stri
 					} else {
 						connIn.Close()
 					}
+					connWait.Done()
 				}()
+				connWait.Wait()
+				log.Printf("%s %s <---> %s %s <=X=> %s %s <---> %s %s\n", connIn.RemoteAddr().Network(), connIn.RemoteAddr().String(), connIn.LocalAddr().Network(), connIn.LocalAddr().String(), connOut.LocalAddr().Network(), connOut.LocalAddr().String(), connOut.RemoteAddr().Network(), connOut.RemoteAddr().String())
+				if connInTCP, ok := connIn.(*net.TCPConn); ok {
+					connInTCP.Close()
+				}
+				if connOutTCP, ok := connOut.(*net.TCPConn); ok {
+					connOutTCP.Close()
+				}
 			}()
 		}
 	}()
@@ -279,6 +290,8 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 				copy(firstPacket, buffer)
 				go func(addrIn net.Addr, firstPacket []byte) {
 					connOut, err := net.Dial(toProtocol, toAddress)
+					var connWait sync.WaitGroup
+					connWait.Add(2)
 					if err != nil {
 						log.Printf("%s %s <---> %s %s <===> %s ? <-!-> %s %s\n", addrIn.Network(), addrIn.String(), connIn.LocalAddr().Network(), connIn.LocalAddr().String(), toProtocol, toProtocol, toAddress)
 						log.Println(err)
@@ -348,6 +361,7 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 						} else {
 							connOut.Close()
 						}
+						connWait.Done()
 					}()
 					go func() {
 						var err error
@@ -397,8 +411,14 @@ func startForwardingPacket(fromProtocol, fromAddress, toProtocol, toAddress stri
 						if connOutTCP, ok := connOut.(*net.TCPConn); ok {
 							connOutTCP.CloseRead()
 						}
+						connWait.Done()
 					}()
 					pipeOut.Write(firstPacket)
+					connWait.Wait()
+					log.Printf("%s %s <---> %s %s <=X=> %s %s <---> %s %s\n", addrIn.Network(), addrIn.String(), connIn.LocalAddr().Network(), connIn.LocalAddr().String(), connOut.LocalAddr().Network(), connOut.LocalAddr().String(), connOut.RemoteAddr().Network(), connOut.RemoteAddr().String())
+					if connOutTCP, ok := connOut.(*net.TCPConn); ok {
+						connOutTCP.Close()
+					}
 				}(addrIn, firstPacket)
 			}
 		}
