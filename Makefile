@@ -16,4 +16,4 @@ uninstall:
 	$(MAKE) -C systemd uninstall
 
 pofwd: pofwd.go
-	go build -o pofwd
+	go build -o pofwd pofwd.go
